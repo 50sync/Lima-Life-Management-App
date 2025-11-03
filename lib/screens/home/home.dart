@@ -19,6 +19,7 @@ class _HomeState extends State<Home> {
       route: '/expenseTracker',
       color: Colors.green,
     ),
+    HomeSectionModel(label: 'Tasks', route: '', color: Colors.red),
   ];
 
   int? draggingIndex;

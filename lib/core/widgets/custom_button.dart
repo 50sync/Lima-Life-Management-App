@@ -48,7 +48,7 @@ class _CustomButtonState extends State<CustomButton> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Padding(
+                  child: Padding( 
                     padding: const EdgeInsets.all(8.0),
                     child: widget.isLoading == true
                         ? CircularProgressIndicator(color: Colors.white)

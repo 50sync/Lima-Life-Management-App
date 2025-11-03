@@ -13,14 +13,16 @@ class ExpenseTracker extends StatelessWidget {
         body: const TabBarView(children: [Expenses(), Statistics()]),
         bottomNavigationBar: const Material(
           color: Colors.white,
-          child: TabBar(
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.transparent,
-            tabs: [
-              Tab(icon: Icon(Icons.list), text: 'Expenses'),
-              Tab(icon: Icon(Icons.bar_chart), text: 'Statistics'),
-            ],
+          child: SafeArea(
+            child: TabBar(
+              labelColor: Colors.blue,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Colors.transparent,
+              tabs: [
+                Tab(icon: Icon(Icons.list), text: 'Expenses'),
+                Tab(icon: Icon(Icons.bar_chart), text: 'Statistics'),
+              ],
+            ),
           ),
         ),
       ),

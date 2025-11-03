@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "174884444335",
-    "project_id": "expense-tracker-89935",
-    "storage_bucket": "expense-tracker-89935.firebasestorage.app"
+    "project_number": "1078972267094",
+    "project_id": "lima-bd8f2",
+    "storage_bucket": "lima-bd8f2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:174884444335:android:d0f04c9ad558353c5c5c5a",
+        "mobilesdk_app_id": "1:1078972267094:android:a83d71d619b48a779599f7",
         "android_client_info": {
           "package_name": "com.example.expense_tracker"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC-k37gR_McC3zbIlNjimk7a6BxEB0vt5c"
+          "current_key": "AIzaSyCn4tYUaN6b_Ctp5360lGllmJLEdmPO34M"
         }
       ],
       "services": {

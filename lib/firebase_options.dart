@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -50,19 +47,30 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC-k37gR_McC3zbIlNjimk7a6BxEB0vt5c',
-    appId: '1:174884444335:android:d0f04c9ad558353c5c5c5a',
-    messagingSenderId: '174884444335',
-    projectId: 'expense-tracker-89935',
-    storageBucket: 'expense-tracker-89935.firebasestorage.app',
+    apiKey: 'AIzaSyCn4tYUaN6b_Ctp5360lGllmJLEdmPO34M',
+    appId: '1:1078972267094:android:a83d71d619b48a779599f7',
+    messagingSenderId: '1078972267094',
+    projectId: 'lima-bd8f2',
+    storageBucket: 'lima-bd8f2.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDqvSR3YS8qu7uoyzYE5MU0irSHKr1q0yE',
-    appId: '1:174884444335:ios:ac51992d3f6fa3a65c5c5a',
-    messagingSenderId: '174884444335',
-    projectId: 'expense-tracker-89935',
-    storageBucket: 'expense-tracker-89935.firebasestorage.app',
+    apiKey: 'AIzaSyD3vzxFHGfGoS_1Cffkadmq6Iad-nFdjLs',
+    appId: '1:1078972267094:ios:095258540f81173a9599f7',
+    messagingSenderId: '1078972267094',
+    projectId: 'lima-bd8f2',
+    storageBucket: 'lima-bd8f2.firebasestorage.app',
     iosBundleId: 'com.example.expenseTracker',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBht6ABDkMRiSgGkaFucheFXpBHc6r6j9M',
+    appId: '1:1078972267094:web:4108c3addcb9f97b9599f7',
+    messagingSenderId: '1078972267094',
+    projectId: 'lima-bd8f2',
+    authDomain: 'lima-bd8f2.firebaseapp.com',
+    storageBucket: 'lima-bd8f2.firebasestorage.app',
+    measurementId: 'G-LC33RRM3SB',
+  );
+
 }

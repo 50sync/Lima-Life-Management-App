@@ -8,5 +8,5 @@ DocumentReference<Map<String, dynamic>> get userCollection =>
     fireStore.collection('users').doc(userId);
 
 CollectionReference<Map<String, dynamic>> get transactionsCollection =>
-    fireStore.collection('users').doc(userId).collection('transactions');
+    fireStore.collection('users').doc(userId).collection('expenses');
 final fireAuth = FirebaseAuth.instance;

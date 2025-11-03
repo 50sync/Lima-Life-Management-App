@@ -138,48 +138,65 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                       ),
                     ],
                   ),
-                  if (selectedType == TransactionType.expense) ...[
-                    10.verticalSpace,
-                    IntrinsicHeight(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: AlwaysScrollableScrollPhysics(),
-                        child: Row(
-                          children: List.generate(categories.length, (index) {
-                            return ValueListenableBuilder(
-                              valueListenable: _selectedCategory,
-                              builder: (context, selectedCategory, child) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    _selectedCategory.value =
-                                        categories[index].icon.codePoint;
-                                    log(selectedCategory.toString());
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color:
-                                            selectedCategory ==
-                                                categories[index].icon.codePoint
-                                            ? Colors.black
-                                            : Colors.transparent,
-                                        width: 3,
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Icon(categories[index].icon),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          }),
-                        ),
+                  10.verticalSpace,
+                  IntrinsicHeight(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: AnimatedOpacity(
+                        duration: Duration(milliseconds: 200),
+                        opacity: selectedType == TransactionType.expense
+                            ? 1
+                            : 0,
+                        child: selectedType == TransactionType.expense
+                            ? Row(
+                                children: List.generate(categories.length, (
+                                  index,
+                                ) {
+                                  return ValueListenableBuilder(
+                                    valueListenable: _selectedCategory,
+                                    builder:
+                                        (context, selectedCategory, child) {
+                                          return GestureDetector(
+                                            onTap: () {
+                                              _selectedCategory.value =
+                                                  categories[index]
+                                                      .icon
+                                                      .codePoint;
+                                              log(selectedCategory.toString());
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color:
+                                                      selectedCategory ==
+                                                          categories[index]
+                                                              .icon
+                                                              .codePoint
+                                                      ? Colors.black
+                                                      : Colors.transparent,
+                                                  width: 3,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  4.0,
+                                                ),
+                                                child: Icon(
+                                                  categories[index].icon,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                  );
+                                }),
+                              )
+                            : SizedBox.shrink(),
                       ),
                     ),
-                  ],
+                  ),
 
                   SizedBox(height: 10),
                   ValueListenableBuilder(
