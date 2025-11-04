@@ -1,5 +1,5 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/firebase_cubit.dart';
-import 'package:expense_tracker/core/constants/firebase.dart';
+import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/transaction_model.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
 import 'package:expense_tracker/core/models/user_model.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:go_router/go_router.dart';
 
 class Expenses extends StatefulWidget {
   const Expenses({super.key});
@@ -30,7 +31,7 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
                 context: context,
                 builder: (dialogContext) {
                   return BlocProvider.value(
-                    value: context.read<FireBaseCubit>(),
+                    value: context.read<SupabaseCubit>(),
                     child: AddExpenseDialog(),
                   );
                 },
@@ -40,13 +41,13 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
           );
         },
       ),
-      body: BlocBuilder<FireBaseCubit, FireBaseState>(
+      body: BlocBuilder<SupabaseCubit, SupabaseState>(
         builder: (context, state) {
-          if (state is FireBaseLoaded) {
+          if (state is SupabaseLoaded) {
             return _buildLoadedState(state);
-          } else if (state is FireBaseLoading) {
+          } else if (state is SupabaseLoading) {
             return Center(child: CircularProgressIndicator());
-          } else if (state is FireBaseError) {
+          } else if (state is SupabaseError) {
             return Center(child: Text(state.message));
           } else {
             return SizedBox.shrink();
@@ -56,20 +57,24 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLoadedState(FireBaseLoaded state) {
+  Widget _buildLoadedState(SupabaseLoaded state) {
     final List<TransactionModel> transactions = state.transactions;
     final UserModel user = state.user;
     _balanceController.text = user.currentBalance.toString();
     Future<void> handleDeleteExpense(int index) async {
-      transactionsCollection.doc(transactions[index].id).delete();
+      await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transactions[index].id!);
       num currentBalance = user.currentBalance;
       num changeAmount = transactions[index].amount;
       num newBalance = transactions[index].type == TransactionType.expense
           ? currentBalance + changeAmount
           : currentBalance - changeAmount;
-      await fireStore.collection('users').doc(user.id).update({
-        'balance': newBalance,
-      });
+      await await supabase
+          .from('users')
+          .update({'balance': newBalance})
+          .eq('id', user.id);
     }
 
     return SafeArea(
@@ -86,9 +91,13 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
                 ),
               ],
               keyboardType: TextInputType.number,
-              onSubmitted: (value) {
-                userCollection.update({'balance': num.parse(value)});
+              onSubmitted: (value) async {
+                await supabase
+                    .from('users')
+                    .update({'balance': num.parse(value)})
+                    .eq('id', user.id);
               },
+
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40),
             ),
           ),
@@ -98,7 +107,7 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  context.read<FireBaseCubit>().listenToUserData();
+                  context.read<SupabaseCubit>().listenToUserData();
                 },
                 child: ListView(
                   children: [
@@ -143,6 +152,14 @@ class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
                             ),
                             child: TransactionTile(
                               transactionModel: transactions[index],
+                              onTap: () {
+                                context.push(
+                                  '/insideTransaction',
+                                  extra: {
+                                    'transactionModel': transactions[index],
+                                  },
+                                );
+                              },
                             ),
                           ),
                         );

@@ -1,4 +1,4 @@
-import 'package:expense_tracker/core/constants/firebase.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,11 +12,11 @@ class Splash extends StatefulWidget {
 class _SplashState extends State<Splash> {
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (fireAuth.currentUser != null) {
-        context.push('/home', extra: {'isSignup': true});
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (user != null) {
+        context.go('/home');
       } else {
-        context.push('/loginAndSignup', extra: {'isSignup': false});
+        context.go('/loginAndSignup', extra: {'isSignup': false});
       }
     });
     super.initState();

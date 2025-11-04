@@ -1,17 +1,21 @@
 import 'dart:developer';
+import 'dart:io';
 
-import 'package:expense_tracker/core/bloc/supabase_cubit/firebase_cubit.dart';
+import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
 import 'package:expense_tracker/core/config/themes/styles.dart';
 import 'package:expense_tracker/core/constants/categories.dart';
-import 'package:expense_tracker/core/constants/firebase.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/transaction_model.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
+import 'package:expense_tracker/core/utils/attach_transaction_image.dart';
+import 'package:expense_tracker/core/utils/upload_transaction_image.dart';
 import 'package:expense_tracker/core/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AddExpenseDialog extends StatefulWidget {
   const AddExpenseDialog({super.key});
@@ -28,7 +32,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   final ValueNotifier<int?> _selectedCategory = ValueNotifier<int?>(null);
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
+  final ValueNotifier<File?> _pickedImage = ValueNotifier<File?>(null);
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -197,7 +201,46 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                       ),
                     ),
                   ),
-
+                  SizedBox(
+                    height: 40,
+                    child: SizedBox(
+                      child: Row(
+                        children: [
+                          ValueListenableBuilder(
+                            valueListenable: _pickedImage,
+                            builder: (context, pickedImage, child) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  final File? pickedImage =
+                                      await attachTransactionImage();
+                                  if (pickedImage != null) {
+                                    _pickedImage.value = pickedImage;
+                                  }
+                                },
+                                child: Container(
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.cyan,
+                                      width: 3,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: pickedImage != null
+                                      ? Image.file(
+                                          pickedImage,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Center(child: Icon(Icons.add)),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   SizedBox(height: 10),
                   ValueListenableBuilder(
                     valueListenable: _selectedCategory,
@@ -205,43 +248,62 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                       return ValueListenableBuilder(
                         valueListenable: _selectedType,
                         builder: (context, selectedType, child) {
-                          return BlocBuilder<FireBaseCubit, FireBaseState>(
+                          return BlocBuilder<SupabaseCubit, SupabaseState>(
                             builder: (context, state) {
                               return CustomButton(
                                 onTap: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    if (state is FireBaseLoaded) {
+                                    if (state is SupabaseLoaded) {
                                       final user = state.user;
-                                      transactionsCollection.add(
-                                        TransactionModel(
-                                          type: selectedType,
-                                          amount: double.parse(
-                                            _controllerAmount.text,
-                                          ),
-                                          description: _controllerDescription
-                                              .text
-                                              .trim(),
-                                          date: DateTime.now()
-                                              .toUtc()
-                                              .toIso8601String(),
-                                          categoryId: selectedCategory,
-                                        ).toJson(),
-                                      );
-                                      num currentBalance = user.currentBalance;
-                                      num changeAmount = num.parse(
-                                        _controllerAmount.text,
+
+                                      final newTransaction = TransactionModel(
+                                        type: selectedType,
+                                        amount: double.parse(
+                                          _controllerAmount.text.trim(),
+                                        ),
+                                        description: _controllerDescription.text
+                                            .trim(),
+                                        createdAt: DateTime.now()
+                                            .toUtc()
+                                            .toIso8601String(),
+                                        categoryId: _selectedCategory.value,
                                       );
 
-                                      num newBalance =
-                                          selectedType == TransactionType.income
-                                          ? currentBalance + changeAmount
-                                          : currentBalance - changeAmount;
-                                      fireStore
-                                          .collection('users')
-                                          .doc(user.id)
-                                          .update({'balance': newBalance});
-                                      if (context.mounted) {
-                                        context.pop();
+                                      try {
+                                        // 👇 Insert new transaction
+                                        final imageUrl =
+                                            await uploadTransactionImage(
+                                              _pickedImage.value!,
+                                              user.id, // you can use user.id or a temp id, since transaction isn’t created yet
+                                            );
+                                        await supabase
+                                            .from('transactions')
+                                            .insert({
+                                              ...newTransaction.toJson(),
+                                              'user_id': user.id,
+                                              'image_url': imageUrl,
+                                            })
+                                            .select();
+                                        // 👇 Update user balance
+                                        num currentBalance =
+                                            user.currentBalance;
+                                        num changeAmount = num.parse(
+                                          _controllerAmount.text,
+                                        );
+                                        num newBalance =
+                                            selectedType ==
+                                                TransactionType.income
+                                            ? currentBalance + changeAmount
+                                            : currentBalance - changeAmount;
+
+                                        await supabase
+                                            .from('users')
+                                            .update({'balance': newBalance})
+                                            .eq('id', user.id);
+
+                                        if (context.mounted) context.pop();
+                                      } catch (e) {
+                                        log('Error saving transaction: $e');
                                       }
                                     }
                                   }

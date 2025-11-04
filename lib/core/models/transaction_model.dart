@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
 
 class TransactionModel {
@@ -6,35 +6,43 @@ class TransactionModel {
   final TransactionType type;
   final num amount;
   final String? description;
-  final String date;
+  final String createdAt;
   final int? categoryId;
+  final String? imageUrl;
+
   const TransactionModel({
     this.id,
     required this.type,
     required this.amount,
     required this.description,
-    required this.date,
+    required this.createdAt,
+    this.imageUrl,
     this.categoryId,
   });
 
-  factory TransactionModel.fromJson(DocumentSnapshot doc) {
+  factory TransactionModel.fromJson(Map<String, dynamic> data) {
     return TransactionModel(
-      id: doc.id,
-      type: TransactionType.values.firstWhere((e) => e.name == doc['type']),
-      amount: doc['amount'],
-      description: doc['description'],
-      date: doc['date'] ?? DateTime.now().toUtc().toIso8601String(),
-      categoryId: doc['categoryId'],
+      id: data['id']?.toString(),
+      type: TransactionType.values.firstWhere(
+        (e) => e.name == data['type'],
+        orElse: () => TransactionType.expense, // fallback if null
+      ),
+      amount: data['amount'] ?? 0,
+      description: data['description'] ?? '',
+      createdAt: data['created_at'] ?? DateTime.now().toUtc().toIso8601String(),
+      categoryId: data['category_id'],
+      imageUrl: data['image_url'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'user_id': userId,
       'type': type.name,
       'amount': amount,
       'description': description,
-      'date': date,
-      'categoryId': categoryId,
+      'created_at': createdAt,
+      'category_id': categoryId,
     };
   }
 }

@@ -1,4 +1,5 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/firebase_cubit.dart';
+import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/home_section_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,45 +31,74 @@ class _HomeState extends State<Home> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: StaggeredGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              return DragTarget<int>(
-                onWillAcceptWithDetails: (fromIndex) => fromIndex.data != index,
-                onAcceptWithDetails: (fromIndex) {
-                  setState(() {
-                    final moved = items.removeAt(fromIndex.data);
-                    items.insert(index, moved);
-                  });
-                },
-                builder: (context, candidateData, rejectedData) {
-                  return BlocProvider(
-                    create: (context) => FireBaseCubit()..listenToUserData(),
-                    child: Draggable<int>(
-                      data: index,
-                      feedback: Material(
-                        color: Colors.transparent,
-                        child: _buildTile(
-                          item,
-                          Colors.blueAccent.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      onDragStarted: () =>
-                          setState(() => draggingIndex = index),
-                      onDragEnd: (_) => setState(() => draggingIndex = null),
-                      childWhenDragging: Opacity(
-                        opacity: 0.3,
-                        child: _buildTile(item),
-                      ),
-                      child: _buildTile(item),
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    StaggeredGrid.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      children: List.generate(items.length, (index) {
+                        final item = items[index];
+                        return DragTarget<int>(
+                          onWillAcceptWithDetails: (fromIndex) =>
+                              fromIndex.data != index,
+                          onAcceptWithDetails: (fromIndex) {
+                            setState(() {
+                              final moved = items.removeAt(fromIndex.data);
+                              items.insert(index, moved);
+                            });
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return BlocProvider(
+                              create: (context) =>
+                                  SupabaseCubit()..listenToUserData(),
+                              child: Draggable<int>(
+                                data: index,
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: _buildTile(
+                                    item,
+                                    Colors.blueAccent.withValues(alpha: 0.8),
+                                  ),
+                                ),
+                                onDragStarted: () =>
+                                    setState(() => draggingIndex = index),
+                                onDragEnd: (_) =>
+                                    setState(() => draggingIndex = null),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.3,
+                                  child: _buildTile(item),
+                                ),
+                                child: _buildTile(item),
+                              ),
+                            );
+                          },
+                        );
+                      }),
                     ),
-                  );
-                },
-              );
-            }),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: IconButton(
+                        onPressed: () async {
+                          await supabase.auth.signOut();
+                          if (context.mounted) {
+                            context.push(
+                              '/loginAndSignup',
+                              extra: {'isSignup': false},
+                            );
+                          }
+                        },
+                        icon: Icon(Icons.logout_outlined),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

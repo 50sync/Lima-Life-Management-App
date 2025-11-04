@@ -6,8 +6,13 @@ import 'package:expense_tracker/core/models/transaction_type.dart';
 import 'package:flutter/material.dart';
 
 class TransactionTile extends StatelessWidget {
-  const TransactionTile({super.key, required this.transactionModel});
+  const TransactionTile({
+    super.key,
+    required this.transactionModel,
+    this.onTap,
+  });
   final TransactionModel transactionModel;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -21,6 +26,9 @@ class TransactionTile extends StatelessWidget {
       child: InkWell(
         onTap: () {
           log('message');
+          if (onTap != null) {
+            onTap!();
+          }
         },
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(10),

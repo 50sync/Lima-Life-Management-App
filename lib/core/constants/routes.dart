@@ -1,6 +1,7 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/firebase_cubit.dart';
+import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
 import 'package:expense_tracker/screens/auth/login.dart';
 import 'package:expense_tracker/screens/expense_tracker/expense_tracker.dart';
+import 'package:expense_tracker/screens/expense_tracker/inside_transaction.dart';
 import 'package:expense_tracker/screens/home/home.dart';
 import 'package:expense_tracker/screens/splash/splash.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,7 +21,7 @@ final GoRouter router = GoRouter(
     ShellRoute(
       builder: (context, state, child) {
         return BlocProvider(
-          create: (context) => FireBaseCubit()..listenToUserData(),
+          create: (context) => SupabaseCubit()..listenToUserData(),
           child: child,
         );
       },
@@ -28,6 +29,15 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/expenseTracker',
           builder: (context, state) => ExpenseTracker(),
+        ),
+        GoRoute(
+          path: '/insideTransaction',
+          builder: (context, state) {
+            final data = state.extra as Map<String, dynamic>;
+            return InsideTransaction(
+              transactionModel: data['transactionModel'],
+            );
+          },
         ),
       ],
     ),

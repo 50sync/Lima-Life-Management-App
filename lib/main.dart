@@ -1,19 +1,16 @@
-import 'package:expense_tracker/core/constants/firebase.dart';
 import 'package:expense_tracker/core/constants/routes.dart';
-import 'package:expense_tracker/firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  fireAuth.authStateChanges().listen((user) {
-    userId = user?.uid;
-  });
-  runApp(
-    const ExpenseTracker(),
+  await Supabase.initialize(
+    url: "https://nyythuxivgopubtnegse.supabase.co",
+    anonKey:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eXRodXhpdmdvcHVidG5lZ3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNDQyMTYsImV4cCI6MjA3NzgyMDIxNn0.2O5zF65RzDB0yqfWbL_EPsq4nPkWvJAQ3ZEXNup8Ink",
   );
+  runApp(const ExpenseTracker());
 }
 
 class ExpenseTracker extends StatelessWidget {

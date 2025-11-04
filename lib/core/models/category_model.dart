@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 
 class CategoryModel {
@@ -7,8 +6,8 @@ class CategoryModel {
 
   CategoryModel({required this.name, required this.icon});
 
-  factory CategoryModel.fromMap(DocumentSnapshot doc) {
-    return CategoryModel(name: doc['name'], icon: doc['icon']);
+  factory CategoryModel.fromMap(Map<String,dynamic> json) {
+    return CategoryModel(name: json['name'], icon: json['icon']);
   }
 
   Map<String, dynamic> toMap() {

@@ -1,12 +1,13 @@
 import 'dart:developer';
 
-import 'package:expense_tracker/core/constants/firebase.dart';
+import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/widgets/auth_text_field.dart';
 import 'package:expense_tracker/core/widgets/custom_button.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginAndSignup extends StatefulWidget {
   const LoginAndSignup({super.key, this.isSignup = false});
@@ -91,29 +92,25 @@ class _LoginAndSignupState extends State<LoginAndSignup> {
                                     if (_formKey.currentState!.validate()) {
                                       try {
                                         _isLoading.value = true;
-                                        if (widget.isSignup) {
-                                          final UserCredential
-                                          userCredential = await fireAuth
-                                              .createUserWithEmailAndPassword(
+                                        if (widget.isSignup == true) {
+                                          final AuthResponse userCredential =
+                                              await supabase.auth.signUp(
                                                 email: _emailController.text
                                                     .trim(),
                                                 password: _passwordController
                                                     .text
                                                     .trim(),
                                               );
-                                          await fireStore
-                                              .collection('users')
-                                              .doc(userId)
-                                              .set({
-                                                "balance": 0,
-                                                "email":
-                                                    userCredential.user?.email,
-                                                "id": userId,
-                                              });
+                                          await supabase.from('users').upsert({
+                                            "balance": 0,
+                                            "email": userCredential.user?.email,
+                                            "id":
+                                                userCredential.session?.user.id,
+                                          });
                                           log(userId.toString());
                                         } else {
-                                          await fireAuth
-                                              .signInWithEmailAndPassword(
+                                          await supabase.auth
+                                              .signInWithPassword(
                                                 email: _emailController.text
                                                     .trim(),
                                                 password: _passwordController
@@ -125,7 +122,7 @@ class _LoginAndSignupState extends State<LoginAndSignup> {
                                         if (context.mounted) {
                                           context.push('/home');
                                         }
-                                      } on FirebaseAuthException catch (e) {
+                                      } on SupabaseError catch (e) {
                                         _error.value = e.message;
                                       } finally {
                                         _isLoading.value = false;
