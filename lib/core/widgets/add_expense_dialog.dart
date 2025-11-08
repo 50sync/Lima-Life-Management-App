@@ -1,10 +1,9 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/core/config/themes/styles.dart';
 import 'package:expense_tracker/core/constants/categories.dart';
-import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/transaction_model.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
 import 'package:expense_tracker/core/utils/attach_transaction_image.dart';
@@ -15,11 +14,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 class AddExpenseDialog extends StatefulWidget {
-  const AddExpenseDialog({super.key});
-
+  const AddExpenseDialog({super.key, required this.listKey});
+  final GlobalKey<AnimatedListState> listKey;
   @override
   State<AddExpenseDialog> createState() => _AddExpenseDialogState();
 }
@@ -153,49 +151,57 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                             ? 1
                             : 0,
                         child: selectedType == TransactionType.expense
-                            ? Row(
-                                children: List.generate(categories.length, (
-                                  index,
-                                ) {
-                                  return ValueListenableBuilder(
-                                    valueListenable: _selectedCategory,
-                                    builder:
-                                        (context, selectedCategory, child) {
-                                          return GestureDetector(
-                                            onTap: () {
-                                              _selectedCategory.value =
-                                                  categories[index]
-                                                      .icon
-                                                      .codePoint;
-                                              log(selectedCategory.toString());
+                            ? Column(
+                                children: [
+                                  Row(
+                                    children: List.generate(categories.length, (
+                                      index,
+                                    ) {
+                                      return ValueListenableBuilder(
+                                        valueListenable: _selectedCategory,
+                                        builder:
+                                            (context, selectedCategory, child) {
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  _selectedCategory.value =
+                                                      categories[index]
+                                                          .icon
+                                                          .codePoint;
+                                                  log(
+                                                    selectedCategory.toString(),
+                                                  );
+                                                },
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                      color:
+                                                          selectedCategory ==
+                                                              categories[index]
+                                                                  .icon
+                                                                  .codePoint
+                                                          ? Colors.black
+                                                          : Colors.transparent,
+                                                      width: 3,
+                                                    ),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          4.0,
+                                                        ),
+                                                    child: Icon(
+                                                      categories[index].icon,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
                                             },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color:
-                                                      selectedCategory ==
-                                                          categories[index]
-                                                              .icon
-                                                              .codePoint
-                                                      ? Colors.black
-                                                      : Colors.transparent,
-                                                  width: 3,
-                                                ),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  4.0,
-                                                ),
-                                                child: Icon(
-                                                  categories[index].icon,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                  );
-                                }),
+                                      );
+                                    }),
+                                  ),
+                                  10.verticalSpace,
+                                ],
                               )
                             : SizedBox.shrink(),
                       ),
@@ -248,12 +254,13 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                       return ValueListenableBuilder(
                         valueListenable: _selectedType,
                         builder: (context, selectedType, child) {
-                          return BlocBuilder<SupabaseCubit, SupabaseState>(
+                          return BlocBuilder<ExpensesCubit, ExpensesState>(
                             builder: (context, state) {
                               return CustomButton(
                                 onTap: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    if (state is SupabaseLoaded) {
+                                    if (state is ExpensesLoaded) {
+                                      String? imgUrl;
                                       final user = state.user;
 
                                       final newTransaction = TransactionModel(
@@ -270,21 +277,12 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                                       );
 
                                       try {
-                                        // 👇 Insert new transaction
-                                        final imageUrl =
-                                            await uploadTransactionImage(
-                                              _pickedImage.value!,
-                                              user.id, // you can use user.id or a temp id, since transaction isn’t created yet
-                                            );
-                                        await supabase
-                                            .from('transactions')
-                                            .insert({
-                                              ...newTransaction.toJson(),
-                                              'user_id': user.id,
-                                              'image_url': imageUrl,
-                                            })
-                                            .select();
-                                        // 👇 Update user balance
+                                        if (_pickedImage.value != null) {
+                                          imgUrl = await uploadTransactionImage(
+                                            _pickedImage.value!,
+                                            user.id,
+                                          );
+                                        }
                                         num currentBalance =
                                             user.currentBalance;
                                         num changeAmount = num.parse(
@@ -296,12 +294,15 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                                             ? currentBalance + changeAmount
                                             : currentBalance - changeAmount;
 
-                                        await supabase
-                                            .from('users')
-                                            .update({'balance': newBalance})
-                                            .eq('id', user.id);
-
-                                        if (context.mounted) context.pop();
+                                        if (context.mounted) {
+                                          context.pop();
+                                          await context
+                                              .read<ExpensesCubit>()
+                                              .addTransaction(
+                                                newTransaction,
+                                                imageUrl: imgUrl,
+                                              );
+                                        }
                                       } catch (e) {
                                         log('Error saving transaction: $e');
                                       }

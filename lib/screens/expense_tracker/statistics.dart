@@ -1,4 +1,4 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/core/constants/categories.dart';
 import 'package:expense_tracker/core/models/transaction_model.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
@@ -13,9 +13,9 @@ class Statistics extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<SupabaseCubit, SupabaseState>(
+      body: BlocBuilder<ExpensesCubit, ExpensesState>(
         builder: (context, state) {
-          if (state is SupabaseLoaded) {
+          if (state is ExpensesLoaded) {
             final List<TransactionModel> transactions = state.transactions;
             return SafeArea(
               child: Column(

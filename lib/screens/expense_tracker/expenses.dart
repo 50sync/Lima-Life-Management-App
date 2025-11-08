@@ -1,4 +1,4 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/transaction_model.dart';
 import 'package:expense_tracker/core/models/transaction_type.dart';
@@ -8,7 +8,6 @@ import 'package:expense_tracker/core/widgets/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
 
 class Expenses extends StatefulWidget {
@@ -18,157 +17,143 @@ class Expenses extends StatefulWidget {
   State<Expenses> createState() => _ExpensesState();
 }
 
-class _ExpensesState extends State<Expenses> with TickerProviderStateMixin {
+class _ExpensesState extends State<Expenses> {
   final TextEditingController _balanceController = TextEditingController();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Builder(
-        builder: (context) {
-          return FloatingActionButton(
-            onPressed: () async {
-              showDialog(
-                context: context,
-                builder: (dialogContext) {
-                  return BlocProvider.value(
-                    value: context.read<SupabaseCubit>(),
-                    child: AddExpenseDialog(),
-                  );
-                },
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          showDialog(
+            context: context,
+            builder: (dialogContext) {
+              return BlocProvider.value(
+                value: context.read<ExpensesCubit>(),
+                child: AddExpenseDialog(listKey: _listKey),
               );
             },
-            child: Icon(Icons.add),
           );
         },
+        child: const Icon(Icons.add),
       ),
-      body: BlocBuilder<SupabaseCubit, SupabaseState>(
+      body: BlocBuilder<ExpensesCubit, ExpensesState>(
         builder: (context, state) {
-          if (state is SupabaseLoaded) {
-            return _buildLoadedState(state);
-          } else if (state is SupabaseLoading) {
-            return Center(child: CircularProgressIndicator());
-          } else if (state is SupabaseError) {
+          if (state is ExpensesLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is ExpensesError) {
             return Center(child: Text(state.message));
+          }
+          if (state is ExpensesLoaded) {
+            return Stack(
+              children: [
+                _buildLoadedState(state.user, state.transactions),
+                if (state.isLoading == true)
+                  Container(
+                    color: Colors.grey.withValues(alpha: 0.5),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            );
           } else {
-            return SizedBox.shrink();
+            return Center(child: Text('Unexpected Error'));
           }
         },
       ),
     );
   }
 
-  Widget _buildLoadedState(SupabaseLoaded state) {
-    final List<TransactionModel> transactions = state.transactions;
-    final UserModel user = state.user;
+  Widget _buildLoadedState(
+    UserModel user,
+    List<TransactionModel> transactions,
+  ) {
     _balanceController.text = user.currentBalance.toString();
-    Future<void> handleDeleteExpense(int index) async {
-      await supabase
-          .from('transactions')
-          .delete()
-          .eq('id', transactions[index].id!);
-      num currentBalance = user.currentBalance;
-      num changeAmount = transactions[index].amount;
-      num newBalance = transactions[index].type == TransactionType.expense
-          ? currentBalance + changeAmount
-          : currentBalance - changeAmount;
-      await await supabase
-          .from('users')
-          .update({'balance': newBalance})
-          .eq('id', user.id);
-    }
 
     return SafeArea(
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _balanceController,
-              decoration: InputDecoration(border: InputBorder.none),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^-?[0-9]*\.?[0-9]*$'),
-                ),
-              ],
-              keyboardType: TextInputType.number,
-              onSubmitted: (value) async {
-                await supabase
-                    .from('users')
-                    .update({'balance': num.parse(value)})
-                    .eq('id', user.id);
-              },
-
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40),
+            padding: const EdgeInsets.all(8),
+            child: AnimatedDefaultTextStyle(
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 40,
+                color: Colors.black,
+              ),
+              duration: Duration(seconds: 2),
+              child: Text(user.currentBalance.toString(), key: UniqueKey()),
             ),
           ),
-          if (state.transactions.isEmpty)
-            Expanded(child: Center(child: Text('No Expenses')))
-          else
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  context.read<SupabaseCubit>().listenToUserData();
-                },
-                child: ListView(
-                  children: [
-                    ListView.builder(
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final slidableController = SlidableController(this);
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: 8.0,
-                            left: 8.0,
-                          ),
-                          child: Slidable(
-                            controller: slidableController,
+          Expanded(
+            child: transactions.isEmpty
+                ? const Center(child: Text('No Expenses'))
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<ExpensesCubit>().fetchExpensesData();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: AnimatedList(
+                        key: _listKey,
+                        initialItemCount: transactions.length,
+                        itemBuilder: (context, index, animation) {
+                          final transaction = transactions[index];
+                          return SlideTransition(
                             key: UniqueKey(),
-                            endActionPane: ActionPane(
-                              extentRatio: 0.3,
-                              motion: GestureDetector(
-                                onTap: () async {
-                                  await slidableController.dismiss(
-                                    ResizeRequest(
-                                      Duration(milliseconds: 100),
-                                      () {
-                                        handleDeleteExpense(index);
-                                      },
+                            position: Tween<Offset>(
+                              begin: const Offset(1, 0),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
+                              child: GestureDetector(
+                                onLongPressStart: (details) async {
+                                  await showMenu(
+                                    context: context,
+                                    position: RelativeRect.fromLTRB(
+                                      details.globalPosition.dx,
+                                      details.globalPosition.dy,
+                                      details.globalPosition.dx,
+                                      details.globalPosition.dy,
                                     ),
+                                    items: [
+                                      PopupMenuItem(
+                                        onTap: () async {
+                                          context
+                                              .read<ExpensesCubit>()
+                                              .handleDeleteExpense(
+                                                index,
+                                                _listKey,
+                                                user,
+                                                transactions,
+                                              );
+                                        },
+                                        value: 'delete',
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
                                   );
                                 },
-                                child: Container(
-                                  color: Colors.red,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                child: TransactionTile(
+                                  transactionModel: transaction,
+                                  onTap: () {
+                                    context.push(
+                                      '/insideTransaction',
+                                      extra: {'transactionModel': transaction},
+                                    );
+                                  },
                                 ),
                               ),
-                              children: [],
                             ),
-                            child: TransactionTile(
-                              transactionModel: transactions[index],
-                              onTap: () {
-                                context.push(
-                                  '/insideTransaction',
-                                  extra: {
-                                    'transactionModel': transactions[index],
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+          ),
         ],
       ),
     );

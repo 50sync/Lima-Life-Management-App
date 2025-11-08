@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/widgets/auth_text_field.dart';
 import 'package:expense_tracker/core/widgets/custom_button.dart';
@@ -122,7 +122,7 @@ class _LoginAndSignupState extends State<LoginAndSignup> {
                                         if (context.mounted) {
                                           context.push('/home');
                                         }
-                                      } on SupabaseError catch (e) {
+                                      } on ExpensesError catch (e) {
                                         _error.value = e.message;
                                       } finally {
                                         _isLoading.value = false;

@@ -1,4 +1,4 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/screens/auth/login.dart';
 import 'package:expense_tracker/screens/expense_tracker/expense_tracker.dart';
 import 'package:expense_tracker/screens/expense_tracker/inside_transaction.dart';
@@ -21,7 +21,7 @@ final GoRouter router = GoRouter(
     ShellRoute(
       builder: (context, state, child) {
         return BlocProvider(
-          create: (context) => SupabaseCubit()..listenToUserData(),
+          create: (context) => ExpensesCubit()..fetchExpensesData(),
           child: child,
         );
       },

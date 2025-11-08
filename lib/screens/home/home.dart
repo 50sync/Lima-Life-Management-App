@@ -1,4 +1,4 @@
-import 'package:expense_tracker/core/bloc/supabase_cubit/supabase_cubit.dart';
+import 'package:expense_tracker/core/bloc/expenses_cubit/expenses_cubit.dart';
 import 'package:expense_tracker/core/constants/supabase.dart';
 import 'package:expense_tracker/core/models/home_section_model.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +54,7 @@ class _HomeState extends State<Home> {
                           builder: (context, candidateData, rejectedData) {
                             return BlocProvider(
                               create: (context) =>
-                                  SupabaseCubit()..listenToUserData(),
+                                  ExpensesCubit()..fetchExpensesData(),
                               child: Draggable<int>(
                                 data: index,
                                 feedback: Material(
